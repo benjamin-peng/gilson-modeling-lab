@@ -10,10 +10,10 @@ public class SimRunner {
 		double sigma = 0.3345;
 		double gamma = 0.1;
 		double b = 1.38064852e-23;
-		double temp = 300;
+		double temp = 50;
 		double stepLength = 1e-3;
 		int n;
-		int stepNum = 10000;
+		int stepNum = 100000;
 		
 		Scanner scan = new Scanner(System.in);
 		System.out.print("how many atoms? :: ");
@@ -26,8 +26,9 @@ public class SimRunner {
 		sim.printCoord();
 		sim.setForce();
 		sim.getNewCoord();
-		PrintStream console = System.out;
-		System.setOut(console); 
-		System.out.println(sim.speed);
+		//PrintStream console = System.out;
+		//System.setOut(console); 
+		for (int i = 0; i < sim.speed.size(); i++) 
+			System.out.println(sim.speed.get(i));
 	}
 }

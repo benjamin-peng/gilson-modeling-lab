@@ -178,17 +178,18 @@ public class LangevinAlgorithm {
 	
 	//prints in .xyz file format
 	public void printCoord() throws FileNotFoundException {
-		PrintStream p = new PrintStream(new File("C:\\Users\\lochn\\Desktop\\output.xyz")); // sets output to file
+		PrintStream p = new PrintStream(new File("C:\\Users\\lochn\\Desktop\\output50K.xyz"));
+		p.flush();// sets output to file
 		System.setOut(p); 
 		//PrintStream console = System.out;
 		for (int k = 0; k < steps; k++) {
-			System.out.println(nAtoms);
-			System.out.println(k);
+			//System.out.println(nAtoms);
+			//System.out.println(k);
 			for (int i = 0; i < nAtoms; i++) {		
-				System.out.print("Ar");
+				//System.out.print("Ar");
 				for (int j = 0; j < 3; j++) {
-					System.out.print(" " + coord[i][j]);
-					if ((j + 1) % 3 == 0) System.out.print("\n");
+					//System.out.print(" " + coord[i][j]);
+					//if ((j + 1) % 3 == 0) System.out.print("\n");
 				}
 			}
 			speed.add(Double.toString(getSpeed(coord, nAtoms)));
