@@ -13,7 +13,7 @@ public class LangevinAlgorithm {
 	private double[][] momentum;
 	private double[][] force;
 	private double avogadro = 6.0221409e23;
-	List<String> speed = new ArrayList<String>();
+	List<Double> speedList = new ArrayList<Double>();
 	Random ran = new Random(); 
 	
 	// constructors
@@ -21,7 +21,7 @@ public class LangevinAlgorithm {
 		//TODO: add default constructor
 	}
 
-	public LangevinAlgorithm(double m, double ep, double sig, double gam, double B, double t, double time, int n, int nStep) {
+	public LangevinAlgorithm(double m, double ep, double sig, double gam, double B, double t, double time, /*double thrust,*/int n, int nStep) {
 		mass = m/avogadro;
 		epsilon = ep;
 		sigma = sig;
@@ -76,11 +76,24 @@ public class LangevinAlgorithm {
 			    
 			    r = Math.sqrt(Math.pow(distanceVector[0], 2) + Math.pow(distanceVector[1], 2) + Math.pow(distanceVector[2], 2));
 			    
-			    // TODO: fix LJ forces
+
+			    
+			    
+			    
+			    // TODO: fix LJ forces, make sure this works
 			    /*
 			    force[i][0] += getLJForce(r, distanceVector[0]);
-			    force[i][0] += getLJForce(r, distanceVector[1]);
-			    force[i][0] += getLJForce(r, distanceVector[2]);
+			    force[i][1] += getLJForce(r, distanceVector[1]);
+			    force[i][2] += getLJForce(r, distanceVector[2]);
+			    */
+			    
+			    /*
+			    double forceMagnitude = Math.sqrt(Math.pow(force[i][0], 2) + Math.pow(force[i][1], 2) + Math.pow(force[i][2], 2)); // finds the magnitude of force for the atom
+			    if (Math.random() * 10 >= coord[0][i]) {
+			    	force[i][0] += force[i][0] * thrust / forceMagnitude;
+			    	force[i][1] += force[i][1] * thrust / forceMagnitude;
+			    	force[i][2] += force[i][2] * thrust / forceMagnitude;
+			    { 
 			    */
 			    
 			}
@@ -121,14 +134,15 @@ public class LangevinAlgorithm {
 		momentumPrime = getPrime();
 	}
 	
-	public double getSpeed(double coord[][], int nAtoms) { //sums up the magnitudes of speed and appends to the ArrayList speed
+	public void setSpeed(double coord[][], int nAtoms) { //sums up the magnitudes of speed and appends to the ArrayList speed
 		double speed = 0.0;
 		for (int i = 0; i < nAtoms; i++) {
 			for (int j = 0; j < 3; j++) {
 				speed += Math.sqrt(Math.pow(coord[i][0], 2) + Math.pow(coord[i][1], 2) + Math.pow(coord[i][2], 2));
 			}
+			speedList.add(speed);
+			speed = 0.0;
 		} 
-		return speed;
 	}
 	
 	public double[][] getNewCoord() {
@@ -149,7 +163,6 @@ public class LangevinAlgorithm {
 				momentum[i][j] = momentum[i][j] + 0.5 * timestep * force[i][j];
                 coord[i][j] = coord[i][j] + 0.5 * timestep * momentum[i][j] / mass;
                 momentumPrime[i][j] = Math.exp(-gamma * timestep) * momentum[i][j] + Math.sqrt(1 - Math.exp(-2 * gamma * timestep)) * Math.sqrt(mass * b * temp) * (ran.nextGaussian());
-                // TODO: fix algorithm calc to match Maxwell-Boltzmann instead of Gaussian
                 coord[i][j] = coord[i][j] + .5 * timestep * momentumPrime[i][j] / mass;
                 force = getForce();
                 momentum[i][j] = momentumPrime[i][j]  + .5 * timestep * force[i][j];
@@ -158,12 +171,12 @@ public class LangevinAlgorithm {
 			
 		}
 		
-		for (int i = 0; i < nAtoms; i++) {
+		/*for (int i = 0; i < nAtoms; i++) {
 			for (int j = 0; j < 3; j++) {
 				setForce();
 				momentum[i][j] = momentumPrime[i][j]  + .5 * timestep * force[i][j];
 			}
-		}
+		}*/
 		return coord;
 	}
 	
@@ -178,21 +191,22 @@ public class LangevinAlgorithm {
 	
 	//prints in .xyz file format
 	public void printCoord() throws FileNotFoundException {
-		PrintStream p = new PrintStream(new File("C:\\Users\\lochn\\Desktop\\output50K.xyz"));
-		p.flush();// sets output to file
+		PrintStream p = new PrintStream(new File("C:\\Users\\lochn\\Desktop\\outputK.xyz"));
+		p.flush();
+		// sets output to file
 		System.setOut(p); 
 		//PrintStream console = System.out;
 		for (int k = 0; k < steps; k++) {
-			//System.out.println(nAtoms);
-			//System.out.println(k);
+			System.out.println(nAtoms);
+			System.out.println(k);
 			for (int i = 0; i < nAtoms; i++) {		
-				//System.out.print("Ar");
+				System.out.print("Ar");
 				for (int j = 0; j < 3; j++) {
-					//System.out.print(" " + coord[i][j]);
-					//if ((j + 1) % 3 == 0) System.out.print("\n");
+					System.out.print(" " + coord[i][j]);
+					if ((j + 1) % 3 == 0) System.out.print("\n");
 				}
 			}
-			speed.add(Double.toString(getSpeed(coord, nAtoms)));
+			//setSpeed(coord, nAtoms);
 			getNewCoord();
 		}
 		//System.setOut(console); // sets output back to console and prints when done
