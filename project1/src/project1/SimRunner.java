@@ -6,11 +6,12 @@ public class SimRunner {
 	public static void main(String[] args) throws FileNotFoundException {
 		
 		double mass = 3.9948e-2;
-		double epsilon = 0.0661;
+		double epsilon = 2.873e17;
+				//0.0661;
 		double sigma = 0.3345;
-		double gamma = 0.1;
-		double b = 6e-5;
-				//1.38064852e-23;
+		double gamma = 3;//0000000000;
+		double b = //6e-5;
+				1.38064852e-23;
 		double temp;
 		double stepLength = 1e-3;
 		int n;
@@ -30,7 +31,7 @@ public class SimRunner {
 		sim.getNewCoord();
 		//PrintStream console = System.out;
 		//System.setOut(console); 
-		for (int i = 0; i < sim.speedList.size(); i++) 
-			System.out.println(sim.speedList.get(i));
+		//for (int i = 0; i < sim.speedList.size(); i++) 
+			//System.out.println(sim.speedList.get(i));
 	}
 }

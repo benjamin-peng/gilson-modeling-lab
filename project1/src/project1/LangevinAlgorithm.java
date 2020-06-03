@@ -14,6 +14,7 @@ public class LangevinAlgorithm {
 	private double[][] force;
 	private double avogadro = 6.0221409e23;
 	List<Double> speedList = new ArrayList<Double>();
+	List<Double> kineticEList = new ArrayList<Double>();
 	Random ran = new Random(); 
 	
 	// constructors
@@ -106,7 +107,7 @@ public class LangevinAlgorithm {
 		double[][] momentum = new double[nAtoms][3];
 		for (int i = 0; i < nAtoms; i++) {
 			for (int j = 0; j < 3; j++) {
-				momentum[i][j] = 0.0;
+				momentum[i][j] = 0.00000000000000000000001;
 			}
 		}
 		return momentum;
@@ -140,7 +141,8 @@ public class LangevinAlgorithm {
 			for (int j = 0; j < 3; j++) {
 				speed += Math.sqrt(Math.pow(coord[i][0], 2) + Math.pow(coord[i][1], 2) + Math.pow(coord[i][2], 2));
 			}
-			speedList.add(speed);
+			//speedList.add(speed);
+			kineticEList.add(0.5*speed*speed*mass);
 			speed = 0.0;
 		} 
 	}
@@ -168,7 +170,7 @@ public class LangevinAlgorithm {
                 momentum[i][j] = momentumPrime[i][j]  + .5 * timestep * force[i][j];
 
 			}
-			
+			kineticEList.add(0.5*mass*Math.sqrt(Math.pow(momentum[i][0]/mass, 2) + Math.pow(momentum[i][1]/mass, 2) + Math.pow(momentum[i][2]/mass, 2)));
 		}
 		
 		/*for (int i = 0; i < nAtoms; i++) {
@@ -191,7 +193,7 @@ public class LangevinAlgorithm {
 	
 	//prints in .xyz file format
 	public void printCoord() throws FileNotFoundException {
-		PrintStream p = new PrintStream(new File("C:\\Users\\lochn\\Desktop\\outputK.xyz"));
+		PrintStream p = new PrintStream(new File("C:\\Users\\lochn\\Desktop\\output.xyz"));
 		p.flush();
 		// sets output to file
 		System.setOut(p); 
@@ -209,6 +211,12 @@ public class LangevinAlgorithm {
 			//setSpeed(coord, nAtoms);
 			getNewCoord();
 		}
+		double total = 0.0;
+		for (int i = 0; i < kineticEList.size(); i++) {
+			total += kineticEList.get(i);
+		}
+		double avg = total / steps;
+		System.out.println(avg);
 		//System.setOut(console); // sets output back to console and prints when done
 		//System.out.println("Done!");
 	}
