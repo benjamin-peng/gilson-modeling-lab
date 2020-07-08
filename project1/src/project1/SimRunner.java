@@ -5,6 +5,7 @@ import java.util.*;
 public class SimRunner {
 	public static void main(String[] args) throws FileNotFoundException {
 		
+		/*
 		double mass = 3.9948e-2;
 		double epsilon = 2.873e17;
 				//0.0661;
@@ -15,13 +16,26 @@ public class SimRunner {
 		double temp;
 		double stepLength = 1e-3;
 		int n;
-		int stepNum = 30000;
+		int stepNum = 1000;
+		*/
+		
+		double mass = 1.661e-22; //100,000 gram/mol
+		double epsilon = 6.948e-21; //epsilon = 1kcal/mol
+		double sigma = 4e-9; //meters 
+		double gamma = 2e11;//5e-12; //seconds
+		double b = 1.38064852e-23;
+		double temp;
+		double stepLength = 5e-14; //seconds
+		int n;
+		double stepNum = //1000000.0;
+				10000000000.0;
 		
 		Scanner scan = new Scanner(System.in);
 		System.out.print("what temp? :: ");
 		temp = scan.nextDouble();
 		System.out.print("how many atoms? :: ");
 		n = scan.nextInt();
+		scan.close();
 		//argon
 		LangevinAlgorithm sim = new LangevinAlgorithm(mass, epsilon, sigma, gamma, b, temp, stepLength, /*thrust,*/ n, stepNum);
 		//sim.setRandomCoord();
