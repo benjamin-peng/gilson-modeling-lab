@@ -7,6 +7,9 @@ public class Particle {
 	private double sigma;
 	private double gamma;
 	private double[] coord;
+	private double[] momentum;
+	private double[] momentumPrime;
+	private double[] force;
 	
 	public Particle(String ty, double m, double e, double s, double g, double[] cd) {
 		type = ty;
@@ -15,6 +18,9 @@ public class Particle {
 		sigma = s;
 		gamma = g;
 		coord = cd;
+		momentum = new double[]{0, 0, 0};
+		momentumPrime = new double[]{0, 0, 0};
+		force = new double[]{0, 0, 0};
 	}
 	
 	public String getType() {
@@ -26,9 +32,13 @@ public class Particle {
 	public double getGamma() {
 		return gamma;
 	}
+	public double getSigma() {
+		return sigma;
+	}
 	public double getEpsilon() {
 		return epsilon;
 	}
+	
 	public double[] getCoord() {
 		return coord;
 	}
@@ -40,5 +50,35 @@ public class Particle {
 	}
 	public void setCoordAtPos(double c, int pos) {
 		coord[pos] = c;
+	}
+	
+	public double[] getMomentum(boolean prime) {
+		if (prime) return momentumPrime;
+		else return momentum;
+	}
+	public double getMomentumAtPos(boolean prime, int pos) {
+		if (prime) return momentumPrime[pos];
+		else return momentum[pos];
+	}
+	public void setMomentum(boolean prime, double[] m) {
+		if (prime) momentumPrime = m;
+		else momentum = m;
+	}
+	public void setMomentumAtPos(boolean prime, double m, int pos) {
+		if (prime) momentumPrime[pos] = m;
+		else momentum[pos] = m;
+	}
+	
+	public double[] getForce() {
+		return force;
+	}
+	public double getForceAtPos(int pos) {
+		return force[pos];
+	}
+	public void setForce(double[] f) {
+		force = f;
+	}
+	public void setForceAtPos(double f, int pos) {
+		force[pos] = f;
 	}
 }

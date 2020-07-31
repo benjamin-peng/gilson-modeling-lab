@@ -14,6 +14,11 @@ public class LangevinAlgorithm {
 	private double[][] force;
 	private double avogadro = 6.0221409e23;
 	private ArrayList<Particle> particleList;
+	 ArrayList<ArrayList<Integer>> LJPairList;
+	 ArrayList<ArrayList<Integer>> covPairList;
+	 ArrayList<ArrayList<Integer>> enzPairList;
+
+
 	//List<Double> speedList = new ArrayList<Double>();
 	//List<Double> kineticEList = new ArrayList<Double>();
 	Random ran = new Random(); 
@@ -26,7 +31,9 @@ public class LangevinAlgorithm {
 	public LangevinAlgorithm(double[] m, double[] ep, double[] sig, double gam, double B, double t, double time, /*double thrust,*/int[] n, double nStep) {
 		nAtoms = new int[3];
 		nAtoms = n.clone();
-		
+		LJPairList = new ArrayList<ArrayList<Integer>>();
+		covPairList = new ArrayList<ArrayList<Integer>>();
+		enzPairList = new ArrayList<ArrayList<Integer>>();
 		baseGamma = gam;
 		baseTemp = t;
 		b = B;
@@ -38,17 +45,37 @@ public class LangevinAlgorithm {
 		particleList = new ArrayList<>();
 
 		for (int i = 0; i < n[1]; i++) {
-			particleList.add(new Particle("substrate", m[2], ep[2], sig[2], gam, getRandomCoord()));
+			particleList.add(new Particle("S", m[2], ep[2], sig[2], gam, getRandomCoord()));
 		}
 		for (int i = 0; i < n[0]; i++) {
-			particleList.add(new Particle("enzyme", m[0], ep[0], sig[0], gam, getRandomCoord()));
+			particleList.add(new Particle("E", m[0], ep[0], sig[0], gam, getRandomCoord()));
 		}
 		for (int i = 0; i < n[0]; i++) {
-			particleList.add(new Particle("active", m[1], ep[1], sig[1], gam, getRandomCoord()));
+			particleList.add(new Particle("A", m[1], ep[1], sig[1], gam, getRandomCloseCoord(particleList.get(i + n[1]).getCoord())));
 		}
 
 		//0 position = enzyme #, 1 position = substrate #
 
+	}
+	
+	public void setPairLists() {
+		int count = 0;
+		for (int i = 0; i < nAtoms[1]; i++) {
+			for (int j = i + 1; j < nAtoms[1]; j++) {
+				ArrayList<Integer> forcePair = new ArrayList<Integer>();
+				forcePair.add(i);
+				forcePair.add(j);
+				LJPairList.add(forcePair);
+			}
+		}
+		//TODO: Fix enz pair list and add cov pair list
+		for (int i = nAtoms[1]; i < nAtoms[0] + nAtoms[1]; i++) {
+			ArrayList<Integer> forcePair = new ArrayList<Integer>();
+			forcePair.add(i);
+			forcePair.add(i + nAtoms[0]);
+			enzPairList.add(forcePair);
+		}
+		System.out.println(Arrays.toString(enzPairList.toArray()));
 	}
 	
 	public double[] getRandomCoord() {
@@ -61,9 +88,17 @@ public class LangevinAlgorithm {
 		return coord;
 	}
 	
+	public double[] getRandomCloseCoord(double[] coord) {
+		for (int i = 0; i < 3; i++) {
+			coord[i] += 6e-9;
+		}
+		System.out.println(Arrays.toString(coord));
+		return coord;
+	}
+	
 	public void setRandomCoord() {
-		for (int i = 0; i < nAtoms[1]; i++) {
-			particleList.get(i).setCoord(getRandomCoord());
+		for (Particle p : particleList) {
+			p.setCoord(getRandomCoord());
 		}
 	}
 	
@@ -79,43 +114,78 @@ public class LangevinAlgorithm {
 		else return 0.0;
 	}
 	
-	public double[][] getForce() {
-		double[][] force = new double[nAtoms[1]][3];
+	public void setForce() {
 		double[] distanceVector = new double[3];
 		double r;
 		
-		for (int i = 0; i < nAtoms[1]; i++) {
-			force[i][0] = 0.0;
-			force[i][1] = 0.0;
-			force[i][2] = 0.0;
+		setNewForce();
+		
+		for (ArrayList<Integer> pair : LJPairList) {
+			double eps = particleList.get(pair.get(0)).getEpsilon();
+			double sig = particleList.get(pair.get(0)).getSigma();
+			distanceVector[0] = particleList.get(pair.get(0)).getCoordAtPos(0) - particleList.get(pair.get(1)).getCoordAtPos(0);
+			distanceVector[1] = particleList.get(pair.get(0)).getCoordAtPos(1) - particleList.get(pair.get(1)).getCoordAtPos(1);
+			distanceVector[2] = particleList.get(pair.get(0)).getCoordAtPos(2) - particleList.get(pair.get(1)).getCoordAtPos(2);
 			
-			for (int j = 0; j < nAtoms[1]; j++) {
-				/*
-				distanceVector[0] = coord[i][0] - coord[j][0];
-				distanceVector[1] = coord[i][1] - coord[j][1];
-			    distanceVector[2] = coord[i][2] - coord[j][2];
+		    r = Math.sqrt(Math.pow(distanceVector[0], 2) + Math.pow(distanceVector[1], 2) + Math.pow(distanceVector[2], 2));
+
+		    particleList.get(pair.get(0)).setForceAtPos(particleList.get(pair.get(0)).getForceAtPos(0) + getLJForce(r, distanceVector[0], eps, sig), 0);
+		    particleList.get(pair.get(0)).setForceAtPos(particleList.get(pair.get(0)).getForceAtPos(1) + getLJForce(r, distanceVector[1], eps, sig), 1);
+		    particleList.get(pair.get(0)).setForceAtPos(particleList.get(pair.get(0)).getForceAtPos(2) + getLJForce(r, distanceVector[2], eps, sig), 2);
+		    
+		    particleList.get(pair.get(1)).setForceAtPos(particleList.get(pair.get(1)).getForceAtPos(0) - getLJForce(r, distanceVector[0], eps, sig), 0);
+		    particleList.get(pair.get(1)).setForceAtPos(particleList.get(pair.get(1)).getForceAtPos(1) - getLJForce(r, distanceVector[1], eps, sig), 1);
+		    particleList.get(pair.get(1)).setForceAtPos(particleList.get(pair.get(1)).getForceAtPos(2) - getLJForce(r, distanceVector[2], eps, sig), 2);
+		}
+		
+		for (ArrayList<Integer> pair : enzPairList) {
+			double[] pairOneCoord = particleList.get(pair.get(0)).getCoord();
+			double[] pairTwoCoord = particleList.get(pair.get(1)).getCoord();
+			double k = 6.5;
+			double r0 = 6e-9;
+			double r12 = Math.pow(Math.pow(pairOneCoord[0] - pairTwoCoord[0], 2) + Math.pow(pairOneCoord[1] - pairTwoCoord[1], 2) + Math.pow(pairOneCoord[2] - pairTwoCoord[2], 2), 0.5);
+			
+			for (int i = 0; i < 3; i++) {
+				particleList.get(pair.get(0)).setForceAtPos(-k * (r12 - r0) * (pairOneCoord[i] - pairTwoCoord[i]) / r12, i);
+				particleList.get(pair.get(1)).setForceAtPos(k * (r12 - r0) * (pairOneCoord[i] - pairTwoCoord[i]) / r12, i);
+			}
+
+		}
+		
+		
+		/*
+		for (Particle p : particleList) {
+			p.setForceAtPos(0.0, 0);
+			p.setForceAtPos(0.0, 1);
+			p.setForceAtPos(0.0, 2);
+			
+			for (Particle j : particleList) {
+				
+				distanceVector[0] = p.getCoordAtPos(0) - j.getCoordAtPos(0);
+				distanceVector[1] = p.getCoordAtPos(1) - j.getCoordAtPos(1);
+			    distanceVector[2] = p.getCoordAtPos(2) - j.getCoordAtPos(2);			    
 			    
 			    r = Math.sqrt(Math.pow(distanceVector[0], 2) + Math.pow(distanceVector[1], 2) + Math.pow(distanceVector[2], 2));
-			    */
+			    
 
 			    
 			    
 			    
 			    // TODO: fix LJ forces, make sure this works
-			    /*
+			    
 			    force[i][0] += getLJForce(r, distanceVector[0]);
 			    force[i][1] += getLJForce(r, distanceVector[1]);
 			    force[i][2] += getLJForce(r, distanceVector[2]);
-			    */
 			    
-			    /*
+			    
+			    
 			    double forceMagnitude = Math.sqrt(Math.pow(force[i][0], 2) + Math.pow(force[i][1], 2) + Math.pow(force[i][2], 2)); // finds the magnitude of force for the atom
 			    if (Math.random() * 10 >= coord[0][i]) {
 			    	force[i][0] += force[i][0] * thrust / forceMagnitude;
 			    	force[i][1] += force[i][1] * thrust / forceMagnitude;
 			    	force[i][2] += force[i][2] * thrust / forceMagnitude;
 			    { 
-			    */
+			    
 			    
 			}
 		}
@@ -128,7 +198,6 @@ public class LangevinAlgorithm {
 		}
 		*/
 		//System.out.println(Arrays.deepToString(force));
-		return force;
 	}
 	
 	public double[][] getMomentum() {
@@ -155,8 +224,11 @@ public class LangevinAlgorithm {
 		momentum = getMomentum();
 	}
 	
-	public void setForce() {
-		force = getForce();
+	public void setNewForce() {
+		for (Particle p : particleList) {
+			p.setForce(new double[] {0, 0, 0});
+		}
+		//force = getForce();
 	}
 	
 	public void setPrime() {
@@ -176,42 +248,44 @@ public class LangevinAlgorithm {
 	}
 	
 	public void setNewCoord() {
-		for (int i = 0; i < nAtoms[1]; i++) {
+		for (Particle p : particleList) {
 			//setForce();
 			//TODO: Fix forces w new coord system
 			//force = getForce();
 			for (int j = 0; j < 3; j++) {
 				//restrains particles to a box of certain dimensions, assuming box collision is completely elastic
-				if(particleList.get(i).getCoord()[j] > 1e-6) {
-					particleList.get(i).setCoordAtPos(1e-6, j);
-                	momentum[i][j] = -momentum[i][j];
+				if(p.getCoord()[j] > 1e-6) {
+					p.setCoordAtPos(1e-6, j);
+					p.setMomentumAtPos(false, -p.getMomentumAtPos(false, j), j);
+                	//momentum[i][j] = -momentum[i][j];
                 }
                 
-                else if(particleList.get(i).getCoord()[j] < -1e-6) {
-					particleList.get(i).setCoordAtPos(-1e-6, j);
-                	momentum[i][j] = -momentum[i][j];
+                else if(p.getCoord()[j] < -1e-6) {
+					p.setCoordAtPos(-1e-6, j);
+					p.setMomentumAtPos(false, -p.getMomentumAtPos(false, j), j);
+                	//momentum[i][j] = -momentum[i][j];
                 }
-				double gamma = baseGamma;//baseGamma * ((coord[i][0] + 1e-6) /2e-6 + 1);
-				double temp = baseTemp;//(coord[i][0] + 1e-6) /2e-6 * 100 + 250;
+				double gamma = baseGamma;
+				double temp = baseTemp;
 				//langevin dynamics algorithm -- taken from Allen and Tildesley: Computer Simulation of Liquids
-				momentum[i][j] = momentum[i][j] + 0.5 * timestep * force[i][j];
-				particleList.get(i).setCoordAtPos(particleList.get(i).getCoord()[j] + 0.5 * timestep * momentum[i][j] / particleList.get(i).getMass(), j);
-                //coord[i][j] = coord[i][j] + 0.5 * timestep * momentum[i][j] / mass;
-                momentumPrime[i][j] = Math.exp(-gamma * timestep) * momentum[i][j] + Math.sqrt(1 - Math.exp(-2 * gamma * timestep)) * Math.sqrt(particleList.get(i).getMass() * b * temp) * (ran.nextGaussian());
-				particleList.get(i).setCoordAtPos(particleList.get(i).getCoord()[j] + 0.5 * timestep * momentum[i][j] / particleList.get(i).getMass(), j);
-				particleList.get(i).setCoordAtPos(particleList.get(i).getCoord()[j] + .5 * timestep * momentumPrime[i][j] / particleList.get(i).getMass(), j);
-                //coord[i][j] = coord[i][j] + .5 * timestep * momentumPrime[i][j] / mass;
-                //force = getForce();
-                momentum[i][j] = momentumPrime[i][j]  + .5 * timestep * force[i][j];
+				p.setMomentumAtPos(false, p.getMomentumAtPos(false, j) + 0.5 * timestep * p.getForceAtPos(j), j);
+				p.setCoordAtPos(p.getCoord()[j] + 0.5 * timestep * p.getMomentumAtPos(false, j) / p.getMass(), j);
+                p.setMomentumAtPos(true, Math.exp(-gamma * timestep) * p.getMomentumAtPos(false, j) + Math.sqrt(1 - Math.exp(-2 * gamma * timestep)) * Math.sqrt(p.getMass() * b * temp) * (ran.nextGaussian()), j);
+				p.setCoordAtPos(p.getCoord()[j] + 0.5 * timestep * p.getMomentumAtPos(false, j) / p.getMass(), j);
+				p.setCoordAtPos(p.getCoord()[j] + .5 * timestep * p.getMomentumAtPos(true, j) / p.getMass(), j);
+				setForce();
+				p.setMomentumAtPos(false, p.getMomentumAtPos(true, j) + .5 * timestep * p.getForceAtPos(j), j);
                 
-                if(particleList.get(i).getCoord()[j] > 1e-6) {
-					particleList.get(i).setCoordAtPos(1e-6, j);
-                	momentum[i][j] = -momentum[i][j];
+				if(p.getCoord()[j] > 1e-6) {
+					p.setCoordAtPos(1e-6, j);
+					p.setMomentumAtPos(false, -p.getMomentumAtPos(false, j), j);
+                	//momentum[i][j] = -momentum[i][j];
                 }
                 
-                else if(particleList.get(i).getCoord()[j] < -1e-6) {
-					particleList.get(i).setCoordAtPos(-1e-6, j);
-                	momentum[i][j] = -momentum[i][j];
+                else if(p.getCoord()[j] < -1e-6) {
+					p.setCoordAtPos(-1e-6, j);
+					p.setMomentumAtPos(false, -p.getMomentumAtPos(false, j), j);
+                	//momentum[i][j] = -momentum[i][j];
                 }
 			}
 
@@ -255,18 +329,18 @@ public class LangevinAlgorithm {
 			System.setOut(p);
 			//skips 4/5 frames
 			if (k % 2000 == 0) {
-				System.out.println(nAtoms[1]);
+				System.out.println(nAtoms[0] * 2 + nAtoms[1]);
 				System.out.println(count);
 				count += 1.0;
 				//System.out.println(k);
-				for (int i = 0; i < nAtoms[1]; i++) {
+				for (Particle a : particleList) {
 					//System.setOut(streamList.get(i));
-					//System.out.println(particleList.get(i).getCoordAtPos(0));
+					//System.out.println(p.getCoordAtPos(0));
 							//coord[i][0]);
 					//System.setOut(p);
-					System.out.print(particleList.get(i).getType());
+					System.out.print(a.getType());
 					for (int j = 0; j < 3; j++) {
-						System.out.print(" " + (particleList.get(i).getCoordAtPos(j)*10e7));
+						System.out.print(" " + (a.getCoordAtPos(j)*10e7));
 						if ((j + 1) % 3 == 0) System.out.print("\n");
 					}
 				}

@@ -19,9 +19,9 @@ public class SimRunner {
 		int stepNum = 1000;
 		*/
 		
-		double[] mass = {6.644e-22, 3.322e-22, 1.661e-22}; //100,000 gram/mol
+		double[] mass = {6.644e-22, 1.661e-22, 1.661e-24}; //100,000 gram/mol
 		double[] epsilon = {6.948e-21, 6.948e-21, 6.948e-21}; //epsilon = 1kcal/mol
-		double[] sigma = {4e-9, 4e-9, 4e-9}; //meters 
+		double[] sigma = {4e-9, 2.52e-9, 8e-10}; //meters 
 		double gamma = 2e11;//5e-12; //seconds
 		double b = 1.38064852e-23;
 		double temp;
@@ -30,19 +30,24 @@ public class SimRunner {
 		double stepNum = //1000000.0;
 				10000000000.0;
 		
+		int[] n = new int[2];
 		Scanner scan = new Scanner(System.in);
 		System.out.print("what temp? :: ");
 		temp = scan.nextDouble();
-		System.out.print("how many enzyme/active sites and how many substrate particles? :: ");
-		int[] n = {scan.nextInt(), scan.nextInt()};
+		System.out.print("how many enzyme/active sites? :: ");
+		n[0] = scan.nextInt();
+		System.out.print("how many substrate particles? :: ");
+		n[1] = scan.nextInt();
 		scan.close();
 		//argon
 		LangevinAlgorithm sim = new LangevinAlgorithm(mass, epsilon, sigma, gamma, b, temp, stepLength, /*thrust,*/ n, stepNum);
 		//sim.setRandomCoord();
+		sim.setPairLists();
 		sim.setRandomCoord();
 		sim.printCoord();
-		sim.setForce();
+		sim.setNewForce();
 		sim.setNewCoord();
+
 		//PrintStream console = System.out;
 		//System.setOut(console); 
 		//for (int i = 0; i < sim.speedList.size(); i++) 
