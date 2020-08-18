@@ -61,6 +61,17 @@ public class LangevinAlgorithm {
 				LJPairList.add(forcePair);
 			}
 		}
+		
+		//creates LJ list with substrate and active sites, double check this works
+		for (int i = 0; i < nAtoms[1]; i++) {
+			for (int k = nAtoms[1] + nAtoms[0] + i; k < nAtoms[1] + nAtoms[0] * 2; k++) {
+				ArrayList<Integer> forcePair = new ArrayList<Integer>();
+				forcePair.add(i);
+				forcePair.add(k);
+				LJPairList.add(forcePair);
+			}
+		}
+		
 		//TODO: Fix enz pair list and add cov pair list
 		for (int i = nAtoms[1]; i < nAtoms[0] + nAtoms[1]; i++) {
 			ArrayList<Integer> forcePair = new ArrayList<Integer>();
@@ -363,35 +374,24 @@ public class LangevinAlgorithm {
 		for (double k = 0.0; k < steps; k += 1.0) {
 			System.setOut(p);
 			//skips 4/5 frames
-			if (k % 2000 == 0) {
+			if (k >= 18000) System.exit(0);
+			if //(true) {
+			(k % 200 == 0) {
 				System.out.println(nAtoms[0] * 2 + nAtoms[1]);
 				System.out.println(count);
 				count += 1.0;
-				//System.out.println(k);
 				for (Particle a : particleList) {
-					//System.setOut(streamList.get(i));
-					//System.out.println(p.getCoordAtPos(0));
-							//coord[i][0]);
-					//System.setOut(p);
 					System.out.print(a.getType());
 					for (int j = 0; j < 3; j++) {
 						System.out.print(" " + (a.getCoordAtPos(j)*10e7));
 						if ((j + 1) % 3 == 0) System.out.print("\n");
 					}
 				}
-				//setSpeed(coord, nAtoms);
 			}
 			System.setOut(x); 
 			setNewCoord();
 		}
-		//double total = 0.0;
-		/*for (int i = 0; i < kineticEList.size(); i++) {
-			total += kineticEList.get(i);
-		}
-		double avg = total / steps;
-		System.out.println(avg); */
-		//System.setOut(console); // sets output back to console and prints when done
-		//System.out.println("Done!");
+
 	}
 	
 	
