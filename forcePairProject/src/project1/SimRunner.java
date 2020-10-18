@@ -19,8 +19,8 @@ public class SimRunner {
 		int stepNum = 1000;
 		*/
 		
-		double[] mass = {6.644e-22, 1.661e-22, 1.661e-24}; //100,000 gram/mol
-		double[] epsilon = {6.948e-21, 6.948e-21, 6.948e-21}; //epsilon = 1kcal/mol
+		double[] mass = {1.661e-24 * 40, 1.661e-24 * 10, 1.661e-24};//{6.644e-22, 1.661e-22, 1.661e-24}; //100,000 gram/mol
+		double[] epsilon = {6.948e-21, 6.948e-21, 6.948e-21}; //epsilon = joules
 		double[] sigma = {4e-9, 2.52e-9, 8e-10}; //meters 
 		double gamma = 2e11;//5e-12; //seconds
 		double b = 1.38064852e-23;
@@ -43,7 +43,6 @@ public class SimRunner {
 		LangevinAlgorithm sim = new LangevinAlgorithm(mass, epsilon, sigma, gamma, b, temp, stepLength, /*thrust,*/ n, stepNum);
 		//sim.setRandomCoord();
 		sim.setPairLists();
-		sim.setRandomCoord();
 		sim.printCoord();
 		sim.setNewForce();
 		sim.setNewCoord();

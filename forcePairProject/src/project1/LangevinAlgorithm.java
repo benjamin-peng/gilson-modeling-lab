@@ -30,23 +30,37 @@ public class LangevinAlgorithm {
 		LJPairList = new ArrayList<ArrayList<Integer>>();
 		covPairList = new ArrayList<ArrayList<Integer>>();
 		enzPairList = new ArrayList<ArrayList<Integer>>();
-		baseGamma = gam;
+		baseGamma = gam / 10;
 		baseTemp = t;
 		b = B;
 		timestep = time;
 		steps = nStep;
 		//creates a particle list where each particle has its own coord
 		particleList = new ArrayList<>();
+		
+		double[] coord = {0, 0, 0};
+		double[] coord1 = {6e-9, 6e-9, 6e-9};
 
+		
 		for (int i = 0; i < n[1]; i++) {
-			particleList.add(new Particle("S", m[2], ep[2], sig[2], gam, getRandomCoord()));
+			particleList.add(new Particle("S", m[2], ep[2], sig[2], gam, getRandomCoord()));//getRandomCoord()));
 		}
 		for (int i = 0; i < n[0]; i++) {
 			particleList.add(new Particle("E", m[0], ep[0], sig[0], gam, getRandomCoord()));
 		}
 		for (int i = 0; i < n[0]; i++) {
-			particleList.add(new Particle("A", m[1], ep[1], sig[1], gam, getRandomCloseCoord(particleList.get(i + n[1]).getCoord())));
+			double[] closeCoord = particleList.get(i + n[1]).getCoord().clone();
+			
+			for (int j = 0; j < 3; j++) {
+				closeCoord[j] += 3.464e-9;
+			}
+			
+			particleList.add(new Particle("A", m[1], ep[1], sig[1], gam, closeCoord));//getRandomCloseCoord(particleList.get(i + n[1]).getCoord())));
 		}
+		
+		System.out.println("enzyme and active coord:");
+		System.out.println(Arrays.toString(particleList.get(0).getCoord()));
+		System.out.println(Arrays.toString(particleList.get(1).getCoord()));
 
 		//0 position = enzyme #, 1 position = substrate #
 
@@ -62,6 +76,7 @@ public class LangevinAlgorithm {
 			}
 		}
 		
+		
 		//creates LJ list with substrate and active sites, double check this works
 		for (int i = 0; i < nAtoms[1]; i++) {
 			for (int k = nAtoms[1] + nAtoms[0] + i; k < nAtoms[1] + nAtoms[0] * 2; k++) {
@@ -72,6 +87,7 @@ public class LangevinAlgorithm {
 			}
 		}
 		
+		
 		//TODO: Fix enz pair list and add cov pair list
 		for (int i = nAtoms[1]; i < nAtoms[0] + nAtoms[1]; i++) {
 			ArrayList<Integer> forcePair = new ArrayList<Integer>();
@@ -79,6 +95,10 @@ public class LangevinAlgorithm {
 			forcePair.add(i + nAtoms[0]);
 			enzPairList.add(forcePair);
 		}
+		
+		System.out.println("enz");
+		System.out.println(Arrays.toString(enzPairList.toArray()));
+		
 		for (int i = 0; i < nAtoms[1]; i++) {
 			for (int j = nAtoms[1] + nAtoms[0]; j < 2 * nAtoms[0] + nAtoms[1]; j++) {
 				ArrayList<Integer> forcePair = new ArrayList<Integer>();
@@ -95,7 +115,7 @@ public class LangevinAlgorithm {
 		double[] coord = new double[3];
 		Random rand = new Random();
 		for (int i = 0; i < 3; i++) {
-			coord[i] = -1e-8 + (1e-8 - (-1e-8)) * rand.nextDouble();
+			coord[i] = -1e-7 + (1e-7 - (-1e-7)) * rand.nextDouble();
 		}
 		System.out.println(Arrays.toString(coord));
 		return coord;
@@ -103,23 +123,20 @@ public class LangevinAlgorithm {
 	
 	public double[] getRandomCloseCoord(double[] coord) {
 		for (int i = 0; i < 3; i++) {
-			coord[i] += 6e-9;
+			coord[i] += 3.464e-9;
 		}
-		System.out.println(Arrays.toString(coord));
 		return coord;
 	}
 	
+
 	public void setRandomCoord() {
 		for (Particle p : particleList) {
 			p.setCoord(getRandomCoord());
 		}
 	}
+
 	
-	public double[][] getPresetCoord() {
-		double[][] coord = {{0.0, 0.0, 0.0}, {0.0, 0.0, 0.1}, {0.1, 0.2, -0.3}};
-		return coord;
-	}
-	
+
 	public double getLJForce(double r, double vector, double epsilon, double sigma) {
 		if (r != 0.0) {
 			return ((48 * epsilon)/(r*r)) * ((Math.pow((sigma / r), 12)) - .5*(Math.pow((sigma / r), 6))) * vector;
@@ -136,10 +153,11 @@ public class LangevinAlgorithm {
 		setNewForce();
 		
 		for (ArrayList<Integer> pair : LJPairList) {
+			
 			double[] distanceVector = new double[3];
 			double r;
-			double eps = particleList.get(pair.get(0)).getEpsilon();
-			double sig = particleList.get(pair.get(0)).getSigma();
+			double eps = Math.sqrt(particleList.get(pair.get(0)).getEpsilon() * particleList.get(pair.get(1)).getEpsilon()) ;
+			double sig = (particleList.get(pair.get(0)).getSigma() + particleList.get(pair.get(1)).getSigma()) / 2;
 			distanceVector[0] = particleList.get(pair.get(0)).getCoordAtPos(0) - particleList.get(pair.get(1)).getCoordAtPos(0);
 			distanceVector[1] = particleList.get(pair.get(0)).getCoordAtPos(1) - particleList.get(pair.get(1)).getCoordAtPos(1);
 			distanceVector[2] = particleList.get(pair.get(0)).getCoordAtPos(2) - particleList.get(pair.get(1)).getCoordAtPos(2);
@@ -154,45 +172,40 @@ public class LangevinAlgorithm {
 		    particleList.get(pair.get(1)).setForceAtPos(particleList.get(pair.get(1)).getForceAtPos(0) - getLJForce(r, distanceVector[0], eps, sig), 0);
 		    particleList.get(pair.get(1)).setForceAtPos(particleList.get(pair.get(1)).getForceAtPos(1) - getLJForce(r, distanceVector[1], eps, sig), 1);
 		    particleList.get(pair.get(1)).setForceAtPos(particleList.get(pair.get(1)).getForceAtPos(2) - getLJForce(r, distanceVector[2], eps, sig), 2);
+		    
 		}
 		
 		for (ArrayList<Integer> pair : enzPairList) {
-			double[] pairOneCoord = particleList.get(pair.get(0)).getCoord();
-			double[] pairTwoCoord = particleList.get(pair.get(1)).getCoord();
+			
+			double[] pairOneCoord = particleList.get(pair.get(0)).getCoord().clone();
+			double[] pairTwoCoord = particleList.get(pair.get(1)).getCoord().clone();
 			double k = 0.0248907744; // 6.5 ev / angstrom squared
 			double r0 = 6e-9;
-			double r12 = Math.pow(Math.pow(pairOneCoord[0] - pairTwoCoord[0], 2) + Math.pow(pairOneCoord[1] - pairTwoCoord[1], 2) + Math.pow(pairOneCoord[2] - pairTwoCoord[2], 2), 0.5);
-			//System.out.println(r12 - r0);
-			//System.out.println(0.5 * 0.02 * Math.pow(r12 - r0, 2) * avogadro);
+			double r12 = Math.sqrt(Math.pow(pairOneCoord[0] - pairTwoCoord[0], 2) + Math.pow(pairOneCoord[1] - pairTwoCoord[1], 2) + Math.pow(pairOneCoord[2] - pairTwoCoord[2], 2));
 			//System.out.println(r12);
 			
-			
 			for (int i = 0; i < 3; i++) {
-				particleList.get(pair.get(0)).setForceAtPos(particleList.get(pair.get(0)).getForceAtPos(0) - k * (r12 - r0) * (pairOneCoord[i] - pairTwoCoord[i]) / r12, i);
-				particleList.get(pair.get(1)).setForceAtPos(particleList.get(pair.get(0)).getForceAtPos(0) + k * (r12 - r0) * (pairOneCoord[i] - pairTwoCoord[i]) / r12, i);
+				particleList.get(pair.get(0)).setForceAtPos(particleList.get(pair.get(0)).getForceAtPos(i) - k * (r12 - r0) * (pairOneCoord[i] - pairTwoCoord[i]) / r12, i);
+				particleList.get(pair.get(1)).setForceAtPos(particleList.get(pair.get(0)).getForceAtPos(i) + k * (r12 - r0) * (pairOneCoord[i] - pairTwoCoord[i]) / r12, i);
 			}
+			
 
 		}
 		
 		for (ArrayList<Integer> pair : covPairList) {
+			
 			double[] distanceVector = new double[3];
 			distanceVector[0] = particleList.get(pair.get(0)).getCoordAtPos(0) - particleList.get(pair.get(1)).getCoordAtPos(0);
 			distanceVector[1] = particleList.get(pair.get(0)).getCoordAtPos(1) - particleList.get(pair.get(1)).getCoordAtPos(1);
 			distanceVector[2] = particleList.get(pair.get(0)).getCoordAtPos(2) - particleList.get(pair.get(1)).getCoordAtPos(2);
-			//System.out.println(Arrays.toString(distanceVector));
 			
 			
 			double k = 8.98755e9 * Math.pow(1.6e-19, 2);
-			double q1 = 2;
-			double q2 = -2;
+			double q1 =  3.2044e-19;
+			double q2 = -3.2044e-19;
 			double r = Math.sqrt(Math.pow(distanceVector[0], 2) + Math.pow(distanceVector[1], 2) + Math.pow(distanceVector[2], 2));
 
-			//System.out.println(k * q1 * q2 / (r * r) * (distanceVector[0] / r));
 
-			
-			
-			
-			//System.out.println(r);
 		    particleList.get(pair.get(0)).setForceAtPos(particleList.get(pair.get(0)).getForceAtPos(0) + (k * q1 * q2 / (r * r) * (distanceVector[0] / r)), 0);
 		    particleList.get(pair.get(0)).setForceAtPos(particleList.get(pair.get(0)).getForceAtPos(1) + (k * q1 * q2 / (r * r) * (distanceVector[1] / r)), 1);
 		    particleList.get(pair.get(0)).setForceAtPos(particleList.get(pair.get(0)).getForceAtPos(2) + (k * q1 * q2 / (r * r) * (distanceVector[2] / r)), 2);
@@ -203,51 +216,7 @@ public class LangevinAlgorithm {
 			
 		}
 		
-		/*
-		for (Particle p : particleList) {
-			p.setForceAtPos(0.0, 0);
-			p.setForceAtPos(0.0, 1);
-			p.setForceAtPos(0.0, 2);
-			
-			for (Particle j : particleList) {
-				
-				distanceVector[0] = p.getCoordAtPos(0) - j.getCoordAtPos(0);
-				distanceVector[1] = p.getCoordAtPos(1) - j.getCoordAtPos(1);
-			    distanceVector[2] = p.getCoordAtPos(2) - j.getCoordAtPos(2);			    
-			    
-			    r = Math.sqrt(Math.pow(distanceVector[0], 2) + Math.pow(distanceVector[1], 2) + Math.pow(distanceVector[2], 2));
-			    
 
-			    
-			    
-			    
-			    // TODO: fix LJ forces, make sure this works
-			    
-			    force[i][0] += getLJForce(r, distanceVector[0]);
-			    force[i][1] += getLJForce(r, distanceVector[1]);
-			    force[i][2] += getLJForce(r, distanceVector[2]);
-			    
-			    
-			    
-			    double forceMagnitude = Math.sqrt(Math.pow(force[i][0], 2) + Math.pow(force[i][1], 2) + Math.pow(force[i][2], 2)); // finds the magnitude of force for the atom
-			    if (Math.random() * 10 >= coord[0][i]) {
-			    	force[i][0] += force[i][0] * thrust / forceMagnitude;
-			    	force[i][1] += force[i][1] * thrust / forceMagnitude;
-			    	force[i][2] += force[i][2] * thrust / forceMagnitude;
-			    { 
-			    
-			    
-			}
-		}
-		//scales LJ forces appropriately
-		/*
-		for (int i = 0; i < nAtoms; i++) {
-			for (int j = 0; j < 3; j++) {
-				force[i][j] /= 1e65;
-			}
-		}
-		*/
-		//System.out.println(Arrays.deepToString(force));
 	}
 	
 	public double[][] getMomentum() {
@@ -276,7 +245,6 @@ public class LangevinAlgorithm {
 		for (Particle p : particleList) {
 			p.setForce(new double[] {0, 0, 0});
 		}
-		//force = getForce();
 	}
 	
 	
@@ -286,9 +254,7 @@ public class LangevinAlgorithm {
 			for (int j = 0; j < 3; j++) {
 				speed += Math.sqrt(Math.pow(coord[i][0], 2) + Math.pow(coord[i][1], 2) + Math.pow(coord[i][2], 2));
 			}
-			//speedList.add(speed);
-			//kineticEList.add(0.5*speed*speed*mass);
-			//speed = 0.0;
+
 		} 
 	}
 	
@@ -321,28 +287,38 @@ public class LangevinAlgorithm {
 				setForce();
 				p.setMomentumAtPos(false, p.getMomentumAtPos(true, j) + .5 * timestep * p.getForceAtPos(j), j);
                 
-				if(p.getCoord()[j] > 1e-6) {
-					p.setCoordAtPos(1e-6, j);
+				//teleports substrates to higher conc. pool and detects substrate concentration
+				if (p.getCoord()[0] < -1e-7 && p.getType().equals("S")) {
+					p.setCoord(new double[] {p.getCoord()[0] + 2e-7, -1e-7 + 2e-7 * ran.nextDouble(), -1e-7 + 2e-7 * ran.nextDouble()});
+				}
+				
+				if (p.getCoord()[j] > 1.2e-7 && (p.getType().equals("S"))) {
+					p.setCoordAtPos(1.2e-7, j);
 					p.setMomentumAtPos(false, -p.getMomentumAtPos(false, j), j);
-                	//momentum[i][j] = -momentum[i][j];
+					
+                }
+				
+				if (p.getCoord()[j] < -1.2e-7 && (p.getType().equals("S"))) {
+					p.setCoordAtPos(-1.2e-7, j);
+					p.setMomentumAtPos(false, -p.getMomentumAtPos(false, j), j);
+					
+                }
+				//detects collisions to the walls for enzyme
+				if (p.getCoord()[j] > 1e-7 && (p.getType().equals("E") || p.getType().equals("A"))) {
+					p.setCoordAtPos(1e-7, j);
+					p.setMomentumAtPos(false, -p.getMomentumAtPos(false, j), j);
+					
                 }
                 
-                else if(p.getCoord()[j] < -1e-6) {
-					p.setCoordAtPos(-1e-6, j);
+                else if (p.getCoord()[j] < -1e-7 && (p.getType().equals("E") || p.getType().equals("A"))) {
+					p.setCoordAtPos(-1e-7, j);
 					p.setMomentumAtPos(false, -p.getMomentumAtPos(false, j), j);
-                	//momentum[i][j] = -momentum[i][j];
+                	
                 }
 			}
 
-			//kineticEList.add(0.5*mass*Math.sqrt(Math.pow(momentum[i][0]/mass, 2) + Math.pow(momentum[i][1]/mass, 2) + Math.pow(momentum[i][2]/mass, 2)));
 		}
 		
-		/*for (int i = 0; i < nAtoms; i++) {
-			for (int j = 0; j < 3; j++) {
-				setForce();
-				momentum[i][j] = momentumPrime[i][j]  + .5 * timestep * force[i][j];
-			}
-		}*/
 	}
 	
 	
@@ -371,10 +347,13 @@ public class LangevinAlgorithm {
 		//PrintStream console = System.out;
 		setForce();
 		double count = 0.0;
+		//double[] newCoord = new double[3];
+		//for (int i = 0; i < 3; i++) newCoord[i] = particleList.get(2).getCoordAtPos(i) + 1e-9;
+		//particleList.get(0).setCoord(newCoord);
 		for (double k = 0.0; k < steps; k += 1.0) {
 			System.setOut(p);
 			//skips 4/5 frames
-			if (k >= 18000) System.exit(0);
+			if (count >= 210000) System.exit(0);
 			if //(true) {
 			(k % 200 == 0) {
 				System.out.println(nAtoms[0] * 2 + nAtoms[1]);
