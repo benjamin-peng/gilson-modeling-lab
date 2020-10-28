@@ -11,8 +11,8 @@ public class LangevinAlgorithm {
 	private double avogadro = 6.0221409e23;
 	private ArrayList<Particle> particleList;
 	ArrayList<ArrayList<Integer>> LJPairList;
-	ArrayList<ArrayList<Integer>> covPairList;
-	ArrayList<ArrayList<Integer>> enzPairList;
+	ArrayList<ArrayList<Integer>> electroPairList;
+	ArrayList<ArrayList<Integer>> springPairList;
 
 
 	//List<Double> speedList = new ArrayList<Double>();
@@ -28,8 +28,8 @@ public class LangevinAlgorithm {
 		nAtoms = new int[3];
 		nAtoms = n.clone();
 		LJPairList = new ArrayList<ArrayList<Integer>>();
-		covPairList = new ArrayList<ArrayList<Integer>>();
-		enzPairList = new ArrayList<ArrayList<Integer>>();
+		electroPairList = new ArrayList<ArrayList<Integer>>();
+		springPairList = new ArrayList<ArrayList<Integer>>();
 		baseGamma = gam / 10;
 		baseTemp = t;
 		b = B;
@@ -90,7 +90,7 @@ public class LangevinAlgorithm {
 			ArrayList<Integer> forcePair = new ArrayList<Integer>();
 			forcePair.add(i);
 			forcePair.add(i + nAtoms[0]);
-			enzPairList.add(forcePair);
+			springPairList.add(forcePair);
 		}
 		
 
@@ -100,12 +100,12 @@ public class LangevinAlgorithm {
 				ArrayList<Integer> forcePair = new ArrayList<Integer>();
 				forcePair.add(i);
 				forcePair.add(j);
-				covPairList.add(forcePair);
+				electroPairList.add(forcePair);
 			}
 		}
 		
 		System.out.println("electrostatic pair list");
-		System.out.println(Arrays.toString(covPairList.toArray()));
+		System.out.println(Arrays.toString(electroPairList.toArray()));
 	}
 	
 	public double[] getRandomCoord() {
@@ -141,7 +141,7 @@ public class LangevinAlgorithm {
 		else return 0.0;
 	}
 	
-	public double getCovForce(double q1, double q2, double r) {
+	public double getElectroForce(double q1, double q2, double r) {
 		return 8.988e9 * q1 * q1 / (r * r);
 	}
 	
@@ -173,7 +173,7 @@ public class LangevinAlgorithm {
 		}
 		
 		
-		for (ArrayList<Integer> pair : enzPairList) {
+		for (ArrayList<Integer> pair : springPairList) {
 			
 			double[] pairOneCoord = particleList.get(pair.get(0)).getCoord().clone();
 			double[] pairTwoCoord = particleList.get(pair.get(1)).getCoord().clone();
@@ -191,7 +191,7 @@ public class LangevinAlgorithm {
 		}
 		
 		
-		for (ArrayList<Integer> pair : covPairList) {
+		for (ArrayList<Integer> pair : electroPairList) {
 			
 			
 			double[] distanceVector = new double[3];
