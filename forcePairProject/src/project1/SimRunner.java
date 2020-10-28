@@ -19,13 +19,13 @@ public class SimRunner {
 		int stepNum = 1000;
 		*/
 		
-		double[] mass = {1.661e-24 * 40, 1.661e-24 * 10, 1.661e-24};//{6.644e-22, 1.661e-22, 1.661e-24}; //100,000 gram/mol
+		double[] mass = {1.661e-24, 1.661e-24, 1.661e-24};//{1.661e-24 * 40, 1.661e-24 * 10, 1.661e-24};//{6.644e-22, 1.661e-22, 1.661e-24}; //100,000 gram/mol
 		double[] epsilon = {6.948e-21, 6.948e-21, 6.948e-21}; //epsilon = joules
 		double[] sigma = {4e-9, 2.52e-9, 8e-10}; //meters 
 		double gamma = 2e11;//5e-12; //seconds
 		double b = 1.38064852e-23;
 		double temp;
-		double stepLength = 5e-14; //seconds
+		double stepLength = 5e-14 / 10; //seconds
 		
 		double stepNum = //1000000.0;
 				10000000000.0;

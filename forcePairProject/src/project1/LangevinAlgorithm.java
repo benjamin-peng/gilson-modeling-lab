@@ -58,9 +58,6 @@ public class LangevinAlgorithm {
 			particleList.add(new Particle("A", m[1], ep[1], sig[1], gam, closeCoord));//getRandomCloseCoord(particleList.get(i + n[1]).getCoord())));
 		}
 		
-		System.out.println("enzyme and active coord:");
-		System.out.println(Arrays.toString(particleList.get(0).getCoord()));
-		System.out.println(Arrays.toString(particleList.get(1).getCoord()));
 
 		//0 position = enzyme #, 1 position = substrate #
 
@@ -96,8 +93,7 @@ public class LangevinAlgorithm {
 			enzPairList.add(forcePair);
 		}
 		
-		System.out.println("enz");
-		System.out.println(Arrays.toString(enzPairList.toArray()));
+
 		
 		for (int i = 0; i < nAtoms[1]; i++) {
 			for (int j = nAtoms[1] + nAtoms[0]; j < 2 * nAtoms[0] + nAtoms[1]; j++) {
@@ -108,7 +104,8 @@ public class LangevinAlgorithm {
 			}
 		}
 		
-		System.out.println(Arrays.toString(LJPairList.toArray()));
+		System.out.println("electrostatic pair list");
+		System.out.println(Arrays.toString(covPairList.toArray()));
 	}
 	
 	public double[] getRandomCoord() {
@@ -175,6 +172,7 @@ public class LangevinAlgorithm {
 		    
 		}
 		
+		
 		for (ArrayList<Integer> pair : enzPairList) {
 			
 			double[] pairOneCoord = particleList.get(pair.get(0)).getCoord().clone();
@@ -192,7 +190,9 @@ public class LangevinAlgorithm {
 
 		}
 		
+		
 		for (ArrayList<Integer> pair : covPairList) {
+			
 			
 			double[] distanceVector = new double[3];
 			distanceVector[0] = particleList.get(pair.get(0)).getCoordAtPos(0) - particleList.get(pair.get(1)).getCoordAtPos(0);
@@ -200,9 +200,9 @@ public class LangevinAlgorithm {
 			distanceVector[2] = particleList.get(pair.get(0)).getCoordAtPos(2) - particleList.get(pair.get(1)).getCoordAtPos(2);
 			
 			
-			double k = 8.98755e9 * Math.pow(1.6e-19, 2);
-			double q1 =  3.2044e-19;
-			double q2 = -3.2044e-19;
+			double k = 8.98755e9;// * Math.pow(1.6e-19, 2);
+			double q1 =  1.60218e-19;
+			double q2 = -1.60218e-19;
 			double r = Math.sqrt(Math.pow(distanceVector[0], 2) + Math.pow(distanceVector[1], 2) + Math.pow(distanceVector[2], 2));
 
 
@@ -288,18 +288,25 @@ public class LangevinAlgorithm {
 				p.setMomentumAtPos(false, p.getMomentumAtPos(true, j) + .5 * timestep * p.getForceAtPos(j), j);
                 
 				//teleports substrates to higher conc. pool and detects substrate concentration
-				if (p.getCoord()[0] < -1e-7 && p.getType().equals("S")) {
+				if (p.getCoord()[0] < -1.2e-7 && p.getType().equals("S")) {
 					p.setCoord(new double[] {p.getCoord()[0] + 2e-7, -1e-7 + 2e-7 * ran.nextDouble(), -1e-7 + 2e-7 * ran.nextDouble()});
 				}
 				
-				if (p.getCoord()[j] > 1.2e-7 && (p.getType().equals("S"))) {
-					p.setCoordAtPos(1.2e-7, j);
+				if (p.getCoord()[0] > 1.2e-7 && (p.getType().equals("S"))) {
+					p.setCoordAtPos(1.2e-7, 0);
+					p.setMomentumAtPos(false, -p.getMomentumAtPos(false, 0), 0);
+					
+                }
+				
+				//sets up a box of dimensions 1.0e-7 by 1.0e-7 in the y and x directions
+				if (p.getCoord()[j] > 1.0e-7 && (p.getType().equals("S")) && j != 0) {
+					p.setCoordAtPos(1.0e-7, j);
 					p.setMomentumAtPos(false, -p.getMomentumAtPos(false, j), j);
 					
                 }
 				
-				if (p.getCoord()[j] < -1.2e-7 && (p.getType().equals("S"))) {
-					p.setCoordAtPos(-1.2e-7, j);
+				if (p.getCoord()[j] < -1.0e-7 && (p.getType().equals("S")) && j != 0) {
+					p.setCoordAtPos(-1.0e-7, j);
 					p.setMomentumAtPos(false, -p.getMomentumAtPos(false, j), j);
 					
                 }
@@ -332,7 +339,8 @@ public class LangevinAlgorithm {
 	//prints in .xyz file format
 	public void printCoord() throws FileNotFoundException {
 		File f = new File("C:\\Users\\lochn\\OneDrive\\Documents\\output\\output" + (int)baseTemp + ".xyz");
-		PrintStream x = new PrintStream(new File("C:\\Users\\lochn\\OneDrive\\Documents\\output\\bondenergy.txt"));
+		PrintStream x = new PrintStream(new File("C:\\Users\\lochn\\OneDrive\\Documents\\output\\enzymeKE.txt"));
+		PrintStream y = new PrintStream(new File("C:\\Users\\lochn\\OneDrive\\Documents\\output\\substrateKE.txt"));
 		//sets up the printing of all the x positions to files
 		/*
 		ArrayList<PrintStream> streamList = new ArrayList<>();
@@ -367,7 +375,14 @@ public class LangevinAlgorithm {
 					}
 				}
 			}
+			System.setOut(y);
+			for (int i = 0; i < nAtoms[1]; i++) {
+				System.out.println(0.5 * particleList.get(i).getMass() * Math.pow(particleList.get(i).getSpeed(), 2));
+			}
 			System.setOut(x); 
+			for (int i = nAtoms[1]; i < nAtoms[1] + 2 * nAtoms[0]; i++) {
+				System.out.println(0.5 * particleList.get(i).getMass() * Math.pow(particleList.get(i).getSpeed(), 2));
+			}
 			setNewCoord();
 		}
 

@@ -45,6 +45,10 @@ public class Particle {
 	public double getCoordAtPos(int pos) {
 		return coord[pos];
 	}
+	public double getSpeed() {
+		double speed = Math.sqrt(Math.pow(momentum[0]/mass, 2) + Math.pow(momentum[1]/mass, 2) + Math.pow(momentum[2]/mass, 2));
+		return speed;
+	}
 	public void setCoord(double[] c) {
 		coord = c;
 	}
